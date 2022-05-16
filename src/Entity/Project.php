@@ -3,8 +3,11 @@
 namespace App\Entity;
 
 use App\Repository\ProjectRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use Symfony\Component\Serializer\Annotation\Groups;
 use DateTime;
 use DateTimeInterface;
@@ -57,11 +60,26 @@ class Project
      */
     private $updatedAt;
 
+    /**
+     * @ORM\OneToMany(targetEntity=Comment::class, mappedBy="project", orphanRemoval=true)
+     * @ApiSubresource
+     * @Groups("project:read")
+     */
+    private $comments;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=Tag::class, inversedBy="projects" , cascade={"persist"} )
+     * @Groups({"project:read", "project:write"})
+     */
+    private $tags;
+
 
     public function __construct()
     {
         $this->isPublished = false;
         $this->createdAt = new \DateTime();
+        $this->comments = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
 
@@ -159,6 +177,60 @@ class Project
     public function setPicture($picture)
     {
         $this->picture = $picture;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Comment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): self
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments[] = $comment;
+            $comment->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): self
+    {
+        if ($this->comments->removeElement($comment)) {
+            // set the owning side to null (unless already changed)
+            if ($comment->getProject() === $this) {
+                $comment->setProject(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    public function getTags(): Collection
+    {
+        return $this->tags;
+    }
+
+    public function addTag(Tag $tag): self
+    {
+        if (!$this->tags->contains($tag)) {
+            $this->tags[] = $tag;
+        }
+
+        return $this;
+    }
+
+    public function removeTag(Tag $tag): self
+    {
+        $this->tags->removeElement($tag);
 
         return $this;
     }
