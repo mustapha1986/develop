@@ -73,10 +73,10 @@ class ApiController extends AbstractController
     }
 
 
-        /**
+    /**
      * @Route("project/{id}" , name="project_edit" , methods = {"PUT"})
      */
-    public function edit(int $id)
+    public function edit(Request $request, int $id)
     {
 
         $project = $this->projectRepository->find($id);
@@ -84,11 +84,32 @@ class ApiController extends AbstractController
         if (!$project) {
             return $this->json('project non trouvé ' . $id, 404);
         }
+        $content = json_decode($request->getContent());
+        $$project->setName($content->getName());
+        $this->projectRepository->add($project);
+
         $data[] = [
             'id' => $project->getId(),
             'name' => $project->getName()
         ];
 
         return $this->json($data);
+    }
+
+
+    /**
+     * @Route("project/{id}" , name="project_delete" , methods = {"GET"})
+     */
+    public function delete(Request $request, int $id)
+    {
+
+        $project = $this->projectRepository->find($id);
+
+        if (!$project) {
+            return $this->json('project non trouvé ' . $id, 404);
+        }
+        $this->projectRepository->remove($project);
+
+        return $this->json('Deleted a project successfully with id ' . $id);
     }
 }
