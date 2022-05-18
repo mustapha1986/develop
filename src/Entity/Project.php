@@ -15,7 +15,16 @@ use DateTimeInterface;
 /**
  * @ApiResource(
  *     normalizationContext = {"groups"={"project:read"}},
- *     denormalizationContext = {"groups" = {"project:write"}}
+ *     denormalizationContext = {"groups" = {"project:write"}},
+ *     collectionOperations={
+ *         "get",
+ *         "post"={"security"="is_granted('ROLE_USER')"}
+ *     },
+ *     itemOperations={
+ *         "get",
+ *         "put"={"security"="is_granted('edit', object)"},
+ *         "delete"={"security"="is_granted('delete', object)"}
+ *     }
  * )
  * @ORM\Entity(repositoryClass=ProjectRepository::class)
  */
@@ -25,7 +34,7 @@ class Project
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups("project:read")
+     * @Groups("project:read", "user:read")
      */
     private $id;
 
@@ -72,6 +81,13 @@ class Project
      * @Groups({"project:read", "project:write"})
      */
     private $tags;
+
+    /**
+     * @ORM\ManyToOne(targetEntity=Utilisateur::class, inversedBy="projects")
+     * @ORM\JoinColumn(nullable=false)
+     * @Groups({"project:read"})
+     */
+    private $author;
 
 
     public function __construct()
@@ -234,4 +250,17 @@ class Project
 
         return $this;
     }
+
+    public function getAuthor(): ?Utilisateur
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?Utilisateur $author): self
+    {
+        $this->author = $author;
+
+        return $this;
+    }
+
 }

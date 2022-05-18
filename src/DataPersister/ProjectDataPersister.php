@@ -9,6 +9,7 @@ use App\Repository\ProjectRepository;
 use App\Repository\TagRepository;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Security;
 
 class ProjectDataPersister implements DataPersisterInterface
 {
@@ -16,17 +17,20 @@ class ProjectDataPersister implements DataPersisterInterface
     private $tagRepository;
     private $slugger;
     private $request;
+    private $security;
 
     public function __construct(
         ProjectRepository $projectRepository,
         SluggerInterface $slugger,
         RequestStack $request,
-        TagRepository $tagRepository
+        TagRepository $tagRepository,
+        Security $security
     ) {
         $this->projectRepository = $projectRepository;
         $this->tagRepository = $tagRepository;
         $this->slugger = $slugger;
         $this->request = $request->getCurrentRequest();
+        $this->security = $security;
     }
 
     public function supports($data, array $context = []): bool
@@ -48,7 +52,11 @@ class ProjectDataPersister implements DataPersisterInterface
             $data->setIsPublished(true);
             $data->setUpdatedAt(new \DateTime);
         }
-
+        
+        if ($this->request->getMethod() == 'POST') {
+            $data->setAuthor($this->security->getUser());
+        }
+        
         foreach ($data->getTags() as $tagItem) {
             $tag = $this->tagRepository->findOneByLabel($tagItem->getLabel());
 
